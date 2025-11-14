@@ -1,13 +1,19 @@
 "use client";
 
-import Link from 'next/link';
+import { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
+import ScheduleManager from '@/components/schedule/ScheduleManager';
 import QRLogin from '@/components/auth/QRLogin';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart3, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
-export default function HomePage() {
+export default function SchedulePage() {
   const { user, loading, handleLoginSuccess, handleRefreshStatus, handleLogout } = useAuth();
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+
+  const handleVideoSelect = (videoId: string) => {
+    setSelectedVideoId(videoId);
+  };
 
   if (loading) {
     return (
@@ -48,30 +54,16 @@ export default function HomePage() {
 
   return (
     <AppLayout user={user} onLogout={handleLogout}>
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            欢迎使用 Bili-Up Web
-          </h2>
-          <p className="text-gray-600 mb-6">
-            请选择左侧导航菜单来访问不同功能模块
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              <BarChart3 className="w-5 h-5 mr-2" />
-              任务队列
-            </Link>
-            <Link
-              href="/schedule"
-              className="flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-            >
-              <Clock className="w-5 h-5 mr-2" />
-              定时上传
-            </Link>
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <Clock className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-medium text-gray-900">定时上传</h2>
           </div>
+        </div>
+        
+        <div className="p-6">
+          <ScheduleManager onVideoSelect={handleVideoSelect} />
         </div>
       </div>
     </AppLayout>
