@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, LogOut, Settings, BarChart3, Clock } from 'lucide-react';
+import { User, LogOut, Settings, BarChart3, Clock, Puzzle } from 'lucide-react';
 
 interface UserInfo {
   id: string;
@@ -100,6 +100,20 @@ export default function AppLayout({ children, user, onLogout }: AppLayoutWithAut
                   >
                     <Clock className="w-5 h-5" />
                     <span>定时上传</span>
+                  </Link>
+                </li>
+                
+                <li>
+                  <Link
+                    href="/extension"
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      pathname === '/extension'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Puzzle className="w-5 h-5" />
+                    <span>浏览器插件</span>
                   </Link>
                 </li>
                 
