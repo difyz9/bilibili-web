@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QrCode, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 
 interface QRLoginProps {
@@ -15,13 +15,28 @@ export default function QRLogin({ onLoginSuccess, onRefreshStatus }: QRLoginProp
   const [message, setMessage] = useState<string>('');
   const [polling, setPolling] = useState<boolean>(false);
 
+  // 获取API基础URL
+  const getApiBaseUrl = () => {
+    // 在静态部署模式下，使用当前域名和端口
+    if (typeof window !== 'undefined') {
+      const { protocol, hostname, port } = window.location;
+      // 如果前端和后端运行在同一个端口（embed模式），直接使用当前地址
+      // 否则使用默认的8096端口
+      return `${protocol}//${hostname}${port ? ':' + port : ''}`;
+    }
+    // 服务端渲染时的默认值
+    return 'http://localhost:8096';
+  };
+
   // 生成二维码
-  const generateQRCode = async () => {
+  const generateQRCode = useCallback(async () => {
     setStatus('loading');
     setMessage('正在生成二维码...');
     
     try {
-      const response = await fetch('/api/v1/auth/qrcode');
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/qrcode`);
+      console.log('API Base URL:', apiBaseUrl);
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
       
@@ -33,7 +48,9 @@ export default function QRLogin({ onLoginSuccess, onRefreshStatus }: QRLoginProp
       console.log('QR Code API Response:', data);
       
       if (data.code === 0) {
-        console.log('Setting QR code URL:', data.qr_code_url);
+        // 后端现在直接返回完整的二维码URL
+        console.log('QR code URL from backend:', data.qr_code_url);
+        
         setQrCodeUrl(data.qr_code_url);
         setAuthCode(data.auth_code);
         setStatus('scanning');
@@ -48,7 +65,7 @@ export default function QRLogin({ onLoginSuccess, onRefreshStatus }: QRLoginProp
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       setMessage(`生成二维码失败: ${errorMessage}`);
     }
-  };
+  }, []);
 
   // 轮询检查登录状态
   const startPolling = (code: string) => {
@@ -57,7 +74,8 @@ export default function QRLogin({ onLoginSuccess, onRefreshStatus }: QRLoginProp
     setPolling(true);
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch('/api/v1/auth/poll', {
+        const apiBaseUrl = getApiBaseUrl();
+        const response = await fetch(`${apiBaseUrl}/api/v1/auth/poll`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -99,7 +117,7 @@ export default function QRLogin({ onLoginSuccess, onRefreshStatus }: QRLoginProp
       } catch (error) {
         console.error('检查登录状态失败:', error);
       }
-    }, 2000); // 每2秒检查一次
+    }, 3000); // 每3秒检查一次
 
     // 5分钟后自动停止轮询
     setTimeout(() => {
@@ -120,7 +138,7 @@ export default function QRLogin({ onLoginSuccess, onRefreshStatus }: QRLoginProp
     return () => {
       setPolling(false);
     };
-  }, [generateQRCode]);
+  }, []); // 移除依赖项，避免无限循环
 
   const handleRefresh = () => {
     setPolling(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import QRLogin from '@/components/auth/QRLogin';
 import VideoSubmissionForm from '@/components/video/VideoSubmissionForm';
 import VideoList from '@/components/video/VideoList';
@@ -21,14 +21,20 @@ export default function HomePage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 检查登录状态
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  // 获取API基础URL
+  const getApiBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      const { protocol, hostname, port } = window.location;
+      // 在embed模式下，前端和后端运行在同一个端口
+      return `${protocol}//${hostname}${port ? ':' + port : ''}`;
+    }
+    return 'http://localhost:8096';
+  };
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/v1/auth/status');
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/status`);
       const data = await response.json();
       
       console.log('Auth status response:', data); // 调试日志
@@ -44,7 +50,12 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // 检查登录状态
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const handleLoginSuccess = (userData: UserInfo) => {
     setUser(userData);
@@ -57,7 +68,8 @@ export default function HomePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/v1/auth/logout', { method: 'POST' });
+      const apiBaseUrl = getApiBaseUrl();
+      await fetch(`${apiBaseUrl}/api/v1/auth/logout`, { method: 'POST' });
       setUser(null);
     } catch (error) {
       console.error('登出失败:', error);
